@@ -22,7 +22,7 @@ const page = `<html>
     <title>Upload file</title>
 </head>
 <body>
-<form enctype="multipart/form-data" action="http://clrinfopc07.in2p3.fr:7777/common-mark-upload" method="post">
+<form enctype="multipart/form-data" action="/common-mark-upload" method="post">
       <input type="file" name="upload-file" />
       <input type="hidden" name="token" value="{{.}}"/>
       <input type="submit" value="upload" />
@@ -30,6 +30,12 @@ const page = `<html>
 </body>
 </html>
 `
+
+func handleErr(w http.ResponseWriter, stage string, err error, code int) {
+	log.Printf(stage+": %v\n", err)
+	fmt.Fprintf(w, stage+": %v\n", err)
+	http.Error(w, err.Error(), code)
+}
 
 func upload(w http.ResponseWriter, req *http.Request) {
 	log.Printf("method: %v (from %s)\n", req.Method, req.RemoteAddr)
@@ -42,8 +48,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 
 		t, err := template.New("upload").Parse(page)
 		if err != nil {
-			fmt.Fprintf(w, "error parsing upload-page: %v\n", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleErr(w, "error parsing upload-page", err, http.StatusInternalServerError)
 			return
 		}
 
@@ -53,16 +58,17 @@ func upload(w http.ResponseWriter, req *http.Request) {
 		req.ParseMultipartForm(500 << 20)
 		file, handler, err := req.FormFile("upload-file")
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			handleErr(w, "error parsing form-file", err, http.StatusInternalServerError)
 			return
 		}
 		defer file.Close()
 		hdata, err := cnvToHTML(file)
 		file.Seek(0, 0)
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			handleErr(w, "error converting to HTML", err, http.StatusInternalServerError)
 			return
 		}
+
 		fmt.Fprintf(
 			w,
 			`
@@ -149,5 +155,7 @@ func cnvToHTML(r io.Reader) (io.Reader, error) {
 func main() {
 	http.HandleFunc("/common-mark-upload", upload)
 
+	log.SetPrefix("[cmark-srv] ")
+	log.Printf("listening on http://localhost:7777/common-mark-upload ...\n")
 	log.Printf("exit: %v\n", http.ListenAndServe(":7777", nil))
 }
