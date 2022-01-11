@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -143,7 +142,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 }
 
 func cnvToHTML(r io.Reader) (io.Reader, error) {
-	input, err := ioutil.ReadAll(r)
+	input, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

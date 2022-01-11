@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -13,7 +12,7 @@ import (
 )
 
 func main() {
-	raw, err := ioutil.ReadFile(os.Args[1])
+	raw, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,13 +30,13 @@ func main() {
 
 	ltx := blackfriday.LatexRenderer(0)
 	tex := blackfriday.Markdown(raw, ltx, mdExtensions)
-	tmpdir, err := ioutil.TempDir("", "md2pdf-")
+	tmpdir, err := os.MkdirTemp("", "md2pdf-")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer os.RemoveAll(tmpdir)
 
-	err = ioutil.WriteFile(path.Join(tmpdir, "out.tex"), tex, 0644)
+	err = os.WriteFile(path.Join(tmpdir, "out.tex"), tex, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,17 +54,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	src, err := ioutil.ReadFile(path.Join(tmpdir, "out.pdf"))
+	src, err := os.ReadFile(path.Join(tmpdir, "out.pdf"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile("out.pdf", src, 0644)
+	err = os.WriteFile("out.pdf", src, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile("out.tex", tex, 0644)
+	err = os.WriteFile("out.tex", tex, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
